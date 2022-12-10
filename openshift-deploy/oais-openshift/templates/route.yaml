@@ -1,0 +1,21 @@
+{{- if .Values.route.enabled }}
+apiVersion: route.openshift.io/v1
+kind: Route
+metadata:
+  name: oais-platform-route
+spec:
+  host: {{ .Values.oais.hostname }}
+  to:
+    kind: Service
+    name: oais-platform
+    weight: 1
+  port:
+    targetPort: 8080
+  {{- if .Values.route.tls }}
+  tls:
+    insecureEdgeTerminationPolicy: Redirect
+    termination: edge
+  {{- end }}
+status:
+    ingress: []
+{{- end }}

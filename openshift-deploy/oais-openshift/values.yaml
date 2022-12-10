@@ -1,0 +1,26 @@
+oais:
+  checkHostname: true
+  hostname: dm-luteus.web.cern.ch
+  image: gitlab-registry.cern.ch/digitalmemory/openshift-deploy/oais_dev:latest
+
+inveniordm:
+  baseUrl: your-invenio-url
+
+oidc:
+  clientId: dm-luteus
+
+redis:
+  persistence:
+    enabled: true
+    size: 2Gi
+
+postgres:
+  db: oais_db
+  user: oais
+  persistence:
+    enabled: true
+    size: 5Gi
+
+route:
+  enabled: true
+  tls: true

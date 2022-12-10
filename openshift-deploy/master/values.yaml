@@ -1,0 +1,24 @@
+oais:
+  checkHostname: true
+  hostname: dm-galanos.web.cern.ch
+  image: gitlab-registry.cern.ch/digitalmemory/openshift-deploy/oais_master:latest
+  sipPath: /eos/user/o/oais/platform-storage/galanos/sips
+
+oidc:
+  clientId: dm-galanos
+
+redis:
+  persistence:
+    enabled: true
+    size: 2Gi
+
+postgres:
+  db: oais_db
+  user: oais
+  persistence:
+    enabled: true
+    size: 5Gi
+
+route:
+  enabled: true
+  tls: true

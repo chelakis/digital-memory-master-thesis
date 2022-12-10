@@ -1,0 +1,93 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: oais-platform-config
+data:
+  __init__.py: |
+    import os
+
+    SECRET_KEY = os.environ["DJANGO_SECRET_KEY"]
+
+    {{- if .Values.oais.checkHostname }}
+    ALLOWED_HOSTS = [ {{ .Values.oais.hostname | quote }} ]
+    {{- else }}
+    ALLOWED_HOSTS = [ "*" ]
+    {{- end }}
+
+    SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
+
+    DEBUG = False
+
+    BIC_UPLOAD_PATH = {{ .Values.oais.sipPath | quote }}
+
+    # Finish the URL with a / or the urljoin won't work
+    FILES_URL = "https://new.cernbox.cern.ch/files/spaces/"
+
+    SIP_UPSTREAM_BASEPATH = BIC_UPLOAD_PATH
+
+    LOGIN_REDIRECT_URL = "/login/callback"
+
+    DATABASES = {
+      "default": {
+        "ENGINE": "django.db.backends.postgresql",
+        "NAME": os.environ["POSTGRESQL_DATABASE"],
+        "USER": os.environ["POSTGRESQL_USER"],
+        "PASSWORD": os.environ["POSTGRESQL_PASSWORD"],
+        "HOST": os.environ["DB_HOST"],
+      }
+    }
+
+    __all__ = [
+      "FILES_URL",
+      "SIP_UPSTREAM_BASEPATH",
+      "BIC_UPLOAD_PATH",
+      "ALLOWED_HOSTS",
+      "DEBUG",
+      "LOGIN_REDIRECT_URL",
+      "SECURE_PROXY_SSL_HEADER",
+      "SECRET_KEY",
+      "DATABASES"
+    ]
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: nginx-config
+data:
+  oais.conf: |
+    server {
+      listen 8080;
+
+      {{- if .Values.oais.checkHostname }}
+      server_name {{ .Values.oais.hostname }};
+      {{- else }}
+      server_name _;
+      {{- end }}
+
+      # Django admin panel
+      location /admin {
+          try_files $uri @proxy_api;
+      }
+
+       # Point /api paths to the API served by Django
+      location /api {
+          try_files $uri @proxy_api;
+      }
+
+      # Reroute everything else to the React application
+      # and allow clean urls (using BrowserRouter/History API)
+      location / {
+          root /shared-assets;
+          index index.html;
+          try_files $uri $uri/ /index.html;
+      }
+
+      # Reverse proxy for Django
+      location @proxy_api {
+          proxy_set_header Host $http_host;
+          proxy_set_header X-Real-IP $remote_addr;
+          proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+          proxy_set_header X-Forwarded-Proto $http_x_forwarded_proto;
+          proxy_pass http://localhost:8000;
+      }
+    }

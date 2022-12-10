@@ -1,0 +1,37 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: celery
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: celery
+  template:
+    metadata:
+      labels:
+        app: celery
+      annotations:
+      {{- include "oais.env-checksum" . | indent 8 }}
+      {{- include "oais.config-checksum" . | indent 8 }}
+    spec:
+      containers:
+        - name: celery
+          image: {{ .Values.oais.image }}
+          envFrom:
+            - configMapRef:
+                name: env
+            - secretRef:
+                name: oais-secrets
+          command: ["celery"]
+          args: ["-A",  "oais_platform.celery",  "worker", "-l", "INFO"]
+          volumeMounts:
+            - mountPath: /oais-platform/oais_platform/local_settings
+              name: oais-platform-config
+              readOnly: true
+          imagePullPolicy: Always
+      volumes:
+        - name: oais-platform-config
+          configMap:
+            name: oais-platform-config
+      restartPolicy: Always
