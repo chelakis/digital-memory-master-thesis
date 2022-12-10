@@ -1,0 +1,60 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: archivematica-redis
+  namespace: {{ .Release.Namespace }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: archivematica-redis
+      app.kubernetes.io/instance: {{ .Release.Namespace }}
+      app.kubernetes.io/managed-by: helm    
+  strategy:
+    type: Recreate
+  template:
+    metadata:     
+      labels:
+        app.kubernetes.io/name: archivematica-redis
+        app.kubernetes.io/instance: {{ .Release.Namespace }}
+        app.kubernetes.io/version: test    
+        app.kubernetes.io/managed-by: helm
+    spec:
+      containers:
+        - image: 'redis:6-alpine'
+          name: archivematica-redis            
+          args: ['--save ""', "--appendonly no"]  
+          ports:
+          - containerPort: 6379               
+          resources: 
+            requests:
+              memory: "256Mi"
+              cpu: "1m"
+            limits:
+              memory: "512Mi"
+              cpu: "250m"
+
+      restartPolicy: Always
+      nodeSelector:
+        kubernetes.io/os: linux
+---
+apiVersion: v1
+kind: Service
+metadata:
+  namespace: {{ .Release.Namespace }}
+  name: archivematica-redis
+  labels:
+    app.kubernetes.io/name: archivematica-redis
+    app.kubernetes.io/instance: {{ .Release.Namespace }}
+    app.kubernetes.io/version: test    
+    app.kubernetes.io/managed-by: helm
+spec:  
+  type: ClusterIP
+  ports:
+  - port: 6379
+    targetPort: 6379
+  selector:
+    app.kubernetes.io/name: archivematica-redis
+    app.kubernetes.io/instance: {{ .Release.Namespace }}
+    app.kubernetes.io/version: test    
+    app.kubernetes.io/managed-by: helm

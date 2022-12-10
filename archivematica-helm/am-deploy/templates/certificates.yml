@@ -1,0 +1,32 @@
+# ---
+# apiVersion: cert-manager.io/v1
+# kind: Certificate
+# metadata:
+#   namespace: {{ .Release.Namespace }}
+#   name: localhost
+# spec:
+#   secretName: localhost
+#   subject:
+#     organizations:
+#       - Piql
+#   dnsNames:
+#   - localhost
+#   issuerRef:
+#     name: letsencrypt-prod
+#     kind: ClusterIssuer
+# ---
+# apiVersion: cert-manager.io/v1
+# kind: Certificate
+# metadata:
+#   namespace: {{ .Release.Namespace }}
+#   name: localhost
+# spec:
+#   secretName: localhost
+#   subject:
+#     organizations:
+#       - Piql
+#   dnsNames:
+#   - localhost
+#   issuerRef:
+#     name: letsencrypt-prod
+#     kind: ClusterIssuer

@@ -1,0 +1,13 @@
+{{- if .Values.clamdConfig -}}
+kind: ConfigMap
+apiVersion: v1
+metadata:
+  name: {{ .Release.Namespace }}-clamd
+  labels:
+    app: {{ .Release.Namespace }}
+    release: {{ .Release.Name }}
+    heritage: {{ .Release.Service }}
+data:
+  clamd.conf:
+    {{ toYaml .Values.clamdConfig | indent 4 }}
+{{- end }}

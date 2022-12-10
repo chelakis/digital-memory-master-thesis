@@ -1,0 +1,67 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: archivematica-gearmand
+  namespace: {{ .Release.Namespace }} 
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: archivematica-gearmand
+      app.kubernetes.io/instance: {{ .Release.Namespace }}
+      app.kubernetes.io/managed-by: helm  
+  strategy:
+    type: Recreate
+  template:
+    metadata:      
+      labels:
+        app.kubernetes.io/name: archivematica-gearmand
+        app.kubernetes.io/instance: {{ .Release.Namespace }}
+        app.kubernetes.io/version: test     
+        app.kubernetes.io/managed-by: helm 
+    spec:
+      securityContext:
+        fsGroup: {{ .Values.general.user_uid }}
+      containers:
+        - image: artefactual/gearmand:1.1.17-alpine
+          name: gearmand   
+          securityContext:
+            runAsUser: {{ .Values.general.user_uid }}
+            runAsGroup: {{ .Values.general.user_uid }}
+          args:
+            - --queue-type={{ .Values.gearmand.queue_type }}
+            - --redis-server={{ .Values.gearmand.redis_server }}
+            - --redis-port={{ .Values.gearmand.redis_port }}
+          ports:
+            - containerPort: 4730
+          resources: 
+            requests:
+              memory: "256Mi"
+              cpu: "1m"
+            limits:
+              memory: "2048Mi"
+              cpu: "1000m"
+      restartPolicy: Always
+      nodeSelector:
+        kubernetes.io/os: linux
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: archivematica-gearmand
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app.kubernetes.io/name: archivematica-gearmand
+    app.kubernetes.io/instance: {{ .Release.Namespace }}
+    app.kubernetes.io/version: test    
+    app.kubernetes.io/managed-by: helm 
+spec:
+  type: ClusterIP
+  ports:
+  - port: 4730
+    targetPort: 4730
+  selector:
+    app.kubernetes.io/name: archivematica-gearmand
+    app.kubernetes.io/instance: {{ .Release.Namespace }}
+    app.kubernetes.io/version: test    
+    app.kubernetes.io/managed-by: helm

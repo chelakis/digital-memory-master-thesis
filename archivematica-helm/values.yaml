@@ -1,0 +1,51 @@
+# Default values for am-deploy.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+general:
+  # Pick this based on your project's allowed range
+  # (check the openshift.io/sa.scc.uid-range annotation)
+  user_uid: "1010690000"
+
+archivematica_storage_service:
+  image: gitlab-registry.cern.ch/digitalmemory/archivematica-helm/archivematica-storage-service:dev
+  persistence:
+    enabled: true
+    size: 2Gi
+
+archivematica_dashboard:
+  image: gitlab-registry.cern.ch/digitalmemory/archivematica-helm/archivematica-dashboard:dev
+
+mcp_client:
+  image: gitlab-registry.cern.ch/digitalmemory/archivematica-helm/archivematica-mcp-client:dev
+
+mcp_server:
+  image: gitlab-registry.cern.ch/digitalmemory/archivematica-helm/archivematica-mcp-server:dev
+
+mysql:
+  db: archivematica_db
+  ss_db_url: "mysql://root@mysql:3306"
+  persistence:
+    enabled: true
+    size: 20Gi
+
+clamvd:
+  image: gitlab-registry.cern.ch/digitalmemory/archivematica-helm/am-clamav:dev
+  persistence:
+    enabled: true
+
+route:
+  hostname: "dm-am.web.cern.ch"
+  ss_hostname: "dm-am-ss.web.cern.ch"
+  enabled: true
+  tls: true
+
+redis:
+  persistence:
+    enabled: true
+    size: 2Gi
+
+gearmand:
+  queue_type: redis
+  redis_server: archivematica-redis
+  redis_port: 6379

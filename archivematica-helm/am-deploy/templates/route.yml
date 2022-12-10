@@ -1,0 +1,43 @@
+{{- if .Values.route.enabled }}
+
+
+apiVersion: route.openshift.io/v1
+kind: Route
+metadata:
+  name: am-route-ss
+spec:
+  host: {{ .Values.route.ss_hostname }}
+  to:
+    kind: Service
+    name: archivematica-storage-service
+    weight: 1
+  port:
+    targetPort: 8002
+  {{- if .Values.route.tls }}
+  tls:
+    insecureEdgeTerminationPolicy: Redirect
+    termination: edge
+  {{- end }}
+status:
+    ingress: []
+---
+apiVersion: route.openshift.io/v1
+kind: Route
+metadata:
+  name: am-route
+spec:
+  host: {{ .Values.route.hostname }}
+  to:
+    kind: Service
+    name: archivematica-dashboard
+    weight: 1
+  port:
+    targetPort: 8001
+  {{- if .Values.route.tls }}
+  tls:
+    insecureEdgeTerminationPolicy: Redirect
+    termination: edge
+  {{- end }}
+status:
+    ingress: []
+{{- end }}

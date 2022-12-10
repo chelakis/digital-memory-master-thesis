@@ -1,0 +1,111 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: mysql
+  labels:
+    app.kubernetes.io/name: mysql
+    app.kubernetes.io/instance: {{ .Release.Namespace }}
+    app.kubernetes.io/version: test    
+    app.kubernetes.io/managed-by: helm 
+    run: mysql
+spec:
+  ports:
+  - port: 3306
+    protocol: TCP
+  selector:
+    app: mysql
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mysql
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: mysql
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app: mysql
+    spec:
+      containers:
+        - name: mysql
+          image: bitnami/mysql:5.7
+          envFrom:
+            - secretRef:
+                name: archivematica-settings 
+          env:
+            - name: MYSQL_ROOT_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  key: MYSQL_ROOT_PASSWORD
+                  name: archivematica-settings
+            - name: MYSQL_DATABASE
+              valueFrom:
+                configMapKeyRef:
+                  key: SS_DB_NAME
+                  name: env
+            - name: MYSQL_USER
+              valueFrom:
+                configMapKeyRef:
+                  key: SS_DB_USER
+                  name: env
+            - name: MYSQL_PASSWORD
+              valueFrom:
+                configMapKeyRef:
+                  key: SS_DB_PASSWORD
+                  name: env
+          ports:
+            - containerPort: 3306
+          volumeMounts:
+          - name: mysql-data
+            mountPath: /var/lib/mysql
+          volumeMounts:
+          - name: mysql-initdb
+            mountPath: /docker-entrypoint-initdb.d
+        
+      volumes:
+        - name: mysql-data
+          {{- if .Values.mysql.persistence.enabled }}
+          persistentVolumeClaim:
+            claimName: mysql-pv-claim
+          {{- else }}
+          emptyDir: {}
+          {{- end }}
+        - name: mysql-initdb
+          configMap:
+            name: mysql-initdb-config
+      restartPolicy: Always
+---
+{{- if .Values.mysql.persistence.enabled }}
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: mysql-pv-claim
+  annotations:
+    "helm.sh/resource-policy": keep
+spec:
+  accessModes:
+    - ReadWriteOnce
+    - ReadWriteMany
+    - ReadOnlyMany
+  resources:
+    requests:
+      storage: {{ .Values.mysql.persistence.size }}
+  storageClassName: cephfs
+{{- end }}
+---
+# MySQL reads initialization files from /docker-entrypoint-initdb.d
+# We mount the initialization commands using volumeMounts and volumes
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: mysql-initdb-config
+data:
+  initdb.sql: |
+   CREATE DATABASE IF NOT EXISTS MCP; 
+   GRANT ALL PRIVILEGES ON MCP.* TO 'archivematica'@'%' WITH GRANT OPTION; 
+   FLUSH PRIVILEGES;

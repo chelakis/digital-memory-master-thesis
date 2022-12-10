@@ -1,0 +1,904 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: archivematica-clamav-env
+  namespace: {{ .Release.Namespace }}
+data:
+  CLAMAV_MAX_FILE_SIZE: "2048"
+  CLAMAV_MAX_SCAN_SIZE: "2048"
+  CLAMAV_MAX_STREAM_LENGTH: "2048"
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: archivematica-all
+  namespace: {{ .Release.Namespace }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: archivematica-all
+      app.kubernetes.io/instance: {{ .Release.Namespace }}
+      app.kubernetes.io/managed-by: helm    
+  strategy:
+    type: Recreate
+  template:
+    metadata:     
+      labels:
+        app.kubernetes.io/name: archivematica-all
+        app.kubernetes.io/instance: {{ .Release.Namespace }}
+        app.kubernetes.io/version: test    
+        app.kubernetes.io/managed-by: helm
+      annotations:
+        eos.okd.cern.ch/mount-eos-with-credentials-from-secret: "eos-credentials"
+    spec:
+      securityContext:
+        fsGroup: {{ .Values.general.user_uid }}
+        fsGroupChangePolicy: "OnRootMismatch"
+      serviceAccount: default
+      serviceAccountName: default
+      containers:
+        - image:  {{ .Values.archivematica_storage_service.image }}
+          name: archivematica-storage-service
+          securityContext:
+            runAsUser: {{ .Values.general.user_uid }}
+            runAsGroup: {{ .Values.general.user_uid }}
+          env:
+            - name: SS_GUNICORN_BIND
+              value: 0.0.0.0:8002
+            - name: DJANGO_SETTINGS_MODULE
+              value: storage_service.settings.local
+            - name: FORWARDED_ALLOW_IPS
+              value: '*'        
+            - name: SS_GNUPG_HOME_PATH
+              value: /var/archivematica/storage_service/.gnupg
+            - name: SS_GUNICORN_ACCESSLOG
+              value: /dev/null
+            - name: SS_GUNICORN_RELOAD
+              value: "true"
+            - name: SS_GUNICORN_RELOAD_ENGINE
+              value: auto
+            - name: SS_DB_URL
+              valueFrom:
+                configMapKeyRef:
+                  key: SS_DB_URL
+                  name: env
+            - name: SS_GUNICORN_USER
+              value: {{ .Values.general.user_uid | quote }}
+            - name: SS_GUNICORN_GROUP
+              value: {{ .Values.general.user_uid | quote }}
+            - name: SS_GUNICORN_LOGLEVEL
+              value: "debug"
+          ports:
+          - containerPort: 8002   
+          envFrom:
+            - secretRef:
+                name: archivematica-settings
+          volumeMounts:
+            - mountPath: /var/archivematica/sharedDirectory
+              name: {{ .Release.Namespace }}-pipeline-data
+            - mountPath: /var/archivematica/storage_service
+              name: {{ .Release.Namespace }}-staging-data
+            - mountPath: /home
+              name: {{ .Release.Namespace }}-location-data
+              subPath: sips
+            - mountPath: /home/transfer
+              name: {{ .Release.Namespace }}-transfer-share
+            - mountPath: /data/storage
+              name: {{ .Release.Namespace }}-storage-share
+        
+        - image:  {{ .Values.archivematica_dashboard.image }}
+          name: archivematica-dashboard 
+          securityContext:
+            runAsUser: {{ .Values.general.user_uid }}
+            runAsGroup: {{ .Values.general.user_uid }}
+          env:
+            - name: AM_GUNICORN_BIND 
+              value: 0.0.0.0:8001
+            - name: DJANGO_SETTINGS_MODULE
+              value: settings.local
+            - name: FORWARDED_ALLOW_IPS
+              value: '*'     
+            - name: AM_GUNICORN_ACCESSLOG
+              value: /dev/null
+            - name: AM_GUNICORN_RELOAD
+              value: "true"
+            - name: AM_GUNICORN_RELOAD_ENGINE
+              value: auto
+            - name: AM_GUNICORN_USER
+              value: {{ .Values.general.user_uid | quote }}
+            - name: AM_GUNICORN_GROUP
+              value: {{ .Values.general.user_uid | quote }}
+            - name: AM_GUNICORN_LOGLEVEL
+              value: "debug"
+            - name: AM_GUNICORN_WORKERS
+              value: "1"
+            - name: AM_GUNICORN_PROC_NAME
+              value: "archivematica-dashboard"
+            - name: AM_GUNICORN_CHDIR
+              value: "/src/archivematicaCommon/lib/"
+            - name: ARCHIVEMATICA_DASHBOARD_EMAIL_PORT
+              value: "587"
+            - name: ARCHIVEMATICA_DASHBOARD_CLIENT_PORT
+              value: "3306"
+            - name: ARCHIVEMATICA_DASHBOARD_CLIENT_DATABASE
+              value: MCP
+            - name: ARCHIVEMATICA_DASHBOARD_CLIENT_HOST
+              value: mysql
+            - name: ARCHIVEMATICA_DASHBOARD_CLIENT_USER
+              value: archivematica
+            - name: ARCHIVEMATICA_DASHBOARD_CLIENT_PASSWORD
+              value: archivematica
+            - name: ARCHIVEMATICA_DASHBOARD_DASHBOARD_ELASTICSEARCH_SERVER
+              value: "es:9200"
+            - name: ARCHIVEMATICA_DASHBOARD_DASHBOARD_GEARMAN_SERVER
+              value: "archivematica-gearmand:4730"
+          ports:
+          - containerPort: 8001              
+          envFrom:
+            - secretRef:
+                name: archivematica-settings            
+          volumeMounts:
+            - mountPath: /var/archivematica/sharedDirectory
+              name: {{ .Release.Namespace }}-pipeline-data
+            - mountPath: /home/transfer
+              name: {{ .Release.Namespace }}-transfer-share
+
+        - image: {{ .Values.mcp_server.image }}
+          name: archivematica-mcp-server
+          securityContext:
+            runAsUser: {{ .Values.general.user_uid }}
+            runAsGroup: {{ .Values.general.user_uid }}     
+          env:            
+            - name: DJANGO_SECRET_KEY
+              valueFrom:
+                secretKeyRef:
+                  key: DJANGO_SECRET_KEY
+                  name: archivematica-settings
+            - name: DJANGO_SETTINGS_MODULE
+              value: settings.common
+            - name: ARCHIVEMATICA_MCPSERVER_CLIENT_USER
+              value: archivematica
+            - name: ARCHIVEMATICA_MCPSERVER_CLIENT_PASSWORD
+              value: archivematica
+            - name: ARCHIVEMATICA_MCPSERVER_CLIENT_HOST
+              value: mysql
+            - name: ARCHIVEMATICA_MCPSERVER_CLIENT_DATABASE
+              value: MCP
+            - name: ARCHIVEMATICA_MCPSERVER_MCPSERVER_MCPARCHIVEMATICASERVER
+              value: "archivematica-gearmand:4730"
+            - name: ARCHIVEMATICA_MCPSERVER_SEARCH_ENABLED
+              value: "false"
+          envFrom:
+            - secretRef:
+                name: archivematica-settings   
+          resources: 
+            requests:
+              memory: "256Mi"
+              cpu: "1m"
+            limits:
+              memory: "2048Mi"
+              cpu: "333m"
+          volumeMounts:          
+            - mountPath: /var/archivematica/sharedDirectory
+              name: {{ .Release.Namespace }}-pipeline-data
+            - mountPath: /home/transfer
+              name: {{ .Release.Namespace }}-transfer-share
+             
+        - image: {{ .Values.clamvd.image }}
+          name: clamavd
+          securityContext:
+            runAsUser: {{ .Values.general.user_uid }}
+            runAsGroup: {{ .Values.general.user_uid }}
+          ports:
+            - containerPort: 3310
+          env:
+            - name: CLAMAV_MAX_FILE_SIZE
+              valueFrom:
+                configMapKeyRef:
+                  key: CLAMAV_MAX_FILE_SIZE
+                  name: env
+            - name: CLAMAV_MAX_SCAN_SIZE
+              valueFrom:
+                configMapKeyRef:
+                  key: CLAMAV_MAX_SCAN_SIZE
+                  name: env
+            - name: CLAMAV_MAX_STREAM_LENGTH
+              valueFrom:
+                configMapKeyRef:
+                  key: CLAMAV_MAX_STREAM_LENGTH
+                  name: env   
+          resources: 
+            requests:
+              memory: "256Mi"
+              cpu: "1m"
+            limits:
+              memory: "2048Mi"
+              cpu: "1000m"
+          volumeMounts:
+            - mountPath: /var/archivematica/sharedDirectory
+              name: {{ .Release.Namespace }}-pipeline-data
+              readOnly: true
+            - mountPath: /data
+              name: {{ .Release.Namespace }}-clamav-data
+            - mountPath: /run
+              name: {{ .Release.Namespace }}-clamav-log
+
+        - image: artefactual/fits-ngserver:0.8.4
+          name: archivematica-fits
+          ports:
+            - containerPort: 2113
+          resources: 
+            requests:
+              memory: "256Mi"
+              cpu: "1m"
+            limits:
+              memory: "2048Mi"
+              cpu: "333m"
+          volumeMounts:
+            - mountPath: /var/archivematica/sharedDirectory
+              name: {{ .Release.Namespace }}-pipeline-data
+            
+      initContainers:
+        - image:  {{ .Values.archivematica_storage_service.image }}
+          name: archivematica-storage-service-migrations
+          securityContext:
+            runAsUser: {{ .Values.general.user_uid }}
+            runAsGroup: {{ .Values.general.user_uid }}
+          command: ["sh"]
+          args: ["-c","python /src/storage_service/manage.py migrate --noinput"]
+          envFrom:
+            - secretRef:
+                name: archivematica-settings
+          env:          
+            - name: DJANGO_SETTINGS_MODULE
+              value: storage_service.settings.local
+            - name: FORWARDED_ALLOW_IPS
+              value: '*'        
+            - name: SS_GNUPG_HOME_PATH
+              value: /var/archivematica/storage_service/.gnupg
+            - name: SS_GUNICORN_ACCESSLOG
+              value: /dev/null
+            - name: SS_GUNICORN_RELOAD
+              value: "true"
+            - name: SS_GUNICORN_RELOAD_ENGINE
+              value: auto
+            - name: SS_DB_NAME
+              valueFrom:
+                configMapKeyRef:
+                  key: SS_DB_NAME
+                  name: env
+            - name: SS_DB_USER
+              valueFrom:
+                configMapKeyRef:
+                  key: SS_DB_USER
+                  name: env
+            - name: SS_DB_PASSWORD
+              valueFrom:
+                configMapKeyRef:
+                  key: SS_DB_PASSWORD
+                  name: env
+            - name: SS_DB_HOST
+              valueFrom:
+                configMapKeyRef:
+                  key: SS_DB_HOST
+                  name: env
+            - name: SS_DB_URL
+              valueFrom:
+                configMapKeyRef:
+                  key: SS_DB_URL
+                  name: env
+
+        - image:  {{ .Values.archivematica_storage_service.image }}
+          name: archivematica-storage-service-create-user
+          securityContext:
+            runAsUser: {{ .Values.general.user_uid }}
+            runAsGroup: {{ .Values.general.user_uid }}
+          envFrom:
+            - secretRef:
+                name: archivematica-settings
+          env:
+            - name: DJANGO_SETTINGS_MODULE
+              value: storage_service.settings.local
+            - name: FORWARDED_ALLOW_IPS
+              value: '*'        
+            - name: SS_GNUPG_HOME_PATH
+              value: /var/archivematica/storage_service/.gnupg
+            - name: SS_GUNICORN_ACCESSLOG
+              value: /dev/null
+            - name: SS_GUNICORN_RELOAD
+              value: "true"
+            - name: SS_GUNICORN_RELOAD_ENGINE
+              value: auto
+            - name: SS_DB_NAME
+              valueFrom:
+                configMapKeyRef:
+                  key: SS_DB_NAME
+                  name: env
+            - name: SS_DB_USER
+              valueFrom:
+                configMapKeyRef:
+                  key: SS_DB_USER
+                  name: env
+            - name: SS_DB_PASSWORD
+              valueFrom:
+                configMapKeyRef:
+                  key: SS_DB_PASSWORD
+                  name: env
+            - name: SS_DB_HOST
+              valueFrom:
+                configMapKeyRef:
+                  key: SS_DB_HOST
+                  name: env
+            - name: AM_SS_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  key: AM_SS_USERNAME
+                  name: archivematica-settings
+            - name: AM_SS_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  key: AM_SS_PASSWORD
+                  name: archivematica-settings
+            - name: AM_SS_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  key: AM_SS_API_KEY
+                  name: archivematica-settings
+            - name: AM_SS_EMAIL
+              valueFrom:
+                configMapKeyRef:
+                  key: AM_SS_EMAIL
+                  name: env
+            - name: SS_DB_URL
+              valueFrom:
+                configMapKeyRef:
+                  key: SS_DB_URL
+                  name: env
+          command: ["sh"]
+          args: ["-c",'python /src/storage_service/manage.py create_user --username=$(AM_SS_USERNAME) --password=$(AM_SS_PASSWORD) --email=$(AM_SS_EMAIL) --api-key=$(AM_SS_API_KEY) --superuser ']
+
+        - image:  {{ .Values.archivematica_dashboard.image }}
+          name: archivematica-dashboard-migration  
+          securityContext:
+            runAsUser: {{ .Values.general.user_uid }}
+            runAsGroup: {{ .Values.general.user_uid }} 
+          command: ["sh"]
+          args: ["-c", "python /src/dashboard/src/manage.py migrate --noinput"]
+          envFrom:
+            - secretRef:
+                name: archivematica-settings      
+          env:          
+            - name: DJANGO_SETTINGS_MODULE
+              value: settings.local
+            - name: FORWARDED_ALLOW_IPS
+              value: '*'     
+            - name: AM_GUNICORN_ACCESSLOG
+              value: /dev/null
+            - name: AM_GUNICORN_RELOAD
+              value: "true"
+            - name: AM_GUNICORN_RELOAD_ENGINE
+              value: auto
+            - name: ARCHIVEMATICA_DASHBOARD_EMAIL_PORT
+              value: "587"
+            - name: ARCHIVEMATICA_DASHBOARD_CLIENT_PORT
+              value: "3306"
+            - name: ARCHIVEMATICA_DASHBOARD_CLIENT_DATABASE
+              value: MCP
+            - name: ARCHIVEMATICA_DASHBOARD_CLIENT_HOST
+              value: mysql
+            - name: ARCHIVEMATICA_DASHBOARD_CLIENT_USER
+              value: archivematica
+            - name: ARCHIVEMATICA_DASHBOARD_CLIENT_PASSWORD
+              value: archivematica
+      restartPolicy: Always
+      nodeSelector:
+        kubernetes.io/os: linux  
+      volumes:      
+        - name: {{ .Release.Namespace }}-pipeline-data
+          {{- if .Values.archivematica_storage_service.persistence.enabled }}
+          persistentVolumeClaim:
+            claimName: {{ .Release.Namespace }}-pipeline-data       
+          {{- else }}
+          emptyDir: {}
+          {{- end }}
+        - name: {{ .Release.Namespace }}-staging-data
+          {{- if .Values.archivematica_storage_service.persistence.enabled }}
+          persistentVolumeClaim:
+            claimName: {{ .Release.Namespace }}-staging-data 
+          {{- else }}
+          emptyDir: {}
+          {{- end }}
+        - name: {{ .Release.Namespace }}-location-data
+          {{- if .Values.archivematica_storage_service.persistence.enabled }}
+          persistentVolumeClaim:
+            claimName: {{ .Release.Namespace }}-location-data
+          {{- else }}
+          emptyDir: {}
+          {{- end }}
+        - name: {{ .Release.Namespace }}-transfer-share
+          {{- if .Values.archivematica_storage_service.persistence.enabled }}
+          persistentVolumeClaim:
+            claimName: transfer-share
+          {{- else }}
+          emptyDir: {}
+          {{- end }}
+        - name: {{ .Release.Namespace }}-storage-share
+          {{- if .Values.archivematica_storage_service.persistence.enabled }}
+          persistentVolumeClaim:
+            claimName: storage-share
+          {{- else }}
+          emptyDir: {}
+          {{- end }}
+        - name: {{ .Release.Namespace }}-clamav-data
+          {{- if .Values.clamvd.persistence.enabled }}
+          persistentVolumeClaim:
+            claimName: clamav-data
+          {{- else }}
+          emptyDir: {}
+          {{- end }}
+        - name: {{ .Release.Namespace }}-clamav-log
+          {{- if .Values.clamvd.persistence.enabled }}
+          persistentVolumeClaim:
+            claimName: clamav-log
+          {{- else }}
+          emptyDir: {}
+          {{- end }}
+        {{- if .Values.freshclamConfig }}
+        - name: freshclam-config-volume
+          {{- if .Values.clamvd.persistence.enabled }}
+          configMap:
+            name: {{ .Release.Namespace }}-freshclam
+          {{- else }}
+          emptyDir: {}
+          {{- end }}  
+        {{- end }}
+        {{- if .Values.clamdConfig }}
+        - name: clamd-config-volume
+          {{- if .Values.clamvd.persistence.enabled }}
+          configMap:
+            name: {{ .Release.Namespace }}-clamd
+          {{- else }}
+          emptyDir: {}
+          {{- end }}
+        {{- end }}
+---
+# Seperate deployment for mcp-client so it can have multiple replicas
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: archivematica-mcp-client
+  namespace: {{ .Release.Namespace }}
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: archivematica-mcp-client
+      app.kubernetes.io/instance: {{ .Release.Namespace }}
+      app.kubernetes.io/managed-by: helm    
+  strategy:
+    type: Recreate
+  template:
+    metadata:     
+      labels:
+        app.kubernetes.io/name: archivematica-mcp-client
+        app.kubernetes.io/instance: {{ .Release.Namespace }}
+        app.kubernetes.io/version: test    
+        app.kubernetes.io/managed-by: helm
+      annotations:
+        eos.okd.cern.ch/mount-eos-with-credentials-from-secret: "eos-credentials"
+    spec:
+    
+      securityContext:
+        fsGroup: {{ .Values.general.user_uid }}
+        fsGroupChangePolicy: "OnRootMismatch"
+      serviceAccount: default
+      serviceAccountName: default
+      containers:
+        - image: {{ .Values.mcp_client.image }}
+          name: archivematica-mcp-client
+          securityContext:
+            runAsUser: {{ .Values.general.user_uid }}
+            runAsGroup: {{ .Values.general.user_uid }}
+          env:               
+            - name: DJANGO_SECRET_KEY
+              valueFrom:
+                secretKeyRef:
+                  key: DJANGO_SECRET_KEY
+                  name: archivematica-settings
+            - name: DJANGO_SETTINGS_MODULE
+              value: settings.common
+            - name: ARCHIVEMATICA_MCPCLIENT_EMAIL_BACKEND
+              value: "django.core.mail.backends.smtp.EmailBackend"
+            - name: ARCHIVEMATICA_MCPCLIENT_EMAIL_HOST
+              value: "smtp.sendgrid.net"
+            - name: ARCHIVEMATICA_MCPCLIENT_EMAIL_PORT
+              value: "587"
+            # - name: ARCHIVEMATICA_MCPCLIENT_EMAIL_HOST_USER
+            #   value: '#{EMAIL_USER}#'
+            # - name: ARCHIVEMATICA_MCPCLIENT_EMAIL_HOST_PASSWORD
+            #   value: '#{EMAIL_PASSWORD}#'
+            # - name: ARCHIVEMATICA_MCPCLIENT_EMAIL_DEFAULT_FROM_EMAIL
+            #   value: "am-reports@piqlconnect.com"
+            # - name: ARCHIVEMATICA_MCPCLIENT_EMAIL_SUBJECT_PREFIX
+            #   value: '#{EMAIL_SUBJECT_PREFIX}#'
+            - name: ARCHIVEMATICA_MCPCLIENT_CLIENT_USER
+              value: archivematica
+            - name: ARCHIVEMATICA_MCPCLIENT_CLIENT_PASSWORD
+              value: archivematica
+            - name: ARCHIVEMATICA_MCPCLIENT_CLIENT_HOST
+              value: mysql
+            - name: ARCHIVEMATICA_MCPCLIENT_CLIENT_DATABASE
+              value: MCP
+            - name: ARCHIVEMATICA_MCPCLIENT_MCPCLIENT_ELASTICSEARCHSERVER
+              value: "es:9200"
+            - name: ARCHIVEMATICA_MCPCLIENT_MCPCLIENT_MCPARCHIVEMATICASERVER
+              value: "archivematica-gearmand:4730"
+            - name: ARCHIVEMATICA_MCPCLIENT_MCPCLIENT_SEARCH_ENABLED
+              value: "false" # import from values
+            - name: ARCHIVEMATICA_MCPCLIENT_MCPCLIENT_CAPTURE_CLIENT_SCRIPT_OUTPUT
+              value: "true" # import from values 
+            - name: ARCHIVEMATICA_MCPCLIENT_MCPCLIENT_CLAMAV_PASS_BY_STREAM
+              value: "false"
+            - name: ARCHIVEMATICA_MCPCLIENT_MCPCLIENT_CLAMAV_SERVER
+              value: archivematica-clamavd:3310
+            - name: ARCHIVEMATICA_MCPCLIENT_MCPCLIENT_CLAMAV_CLIENT_MAX_FILE_SIZE
+              valueFrom:
+                configMapKeyRef:
+                  key: CLAMAV_MAX_FILE_SIZE
+                  name: env
+            - name: ARCHIVEMATICA_MCPCLIENT_MCPCLIENT_CLAMAV_CLIENT_MAX_SCAN_SIZE
+              valueFrom:
+                configMapKeyRef:
+                  key: CLAMAV_MAX_SCAN_SIZE
+                  name: env
+            - name: ARCHIVEMATICA_MCPCLIENT_MCPCLIENT_CLAMAV_CLIENT_MAX_STREAM_LENGTH
+              valueFrom:
+                configMapKeyRef:
+                  key: CLAMAV_MAX_STREAM_LENGTH
+                  name: env
+            - name: ARCHIVEMATICA_MCPCLIENT_MCPCLIENT_CLAMAV_CLIENT_BACKEND
+              value: clamdscanner  
+
+          envFrom:
+            - secretRef:
+                name: archivematica-settings       
+          resources: 
+            requests:
+              memory: "256Mi"
+              cpu: "1m"
+            limits:
+              memory: "2048Mi"
+              cpu: "1000m" 
+          volumeMounts:
+            - mountPath: /var/archivematica/sharedDirectory
+              name: {{ .Release.Namespace }}-pipeline-data
+            - mountPath: /home/transfer
+              name: {{ .Release.Namespace }}-transfer-share
+      restartPolicy: Always
+      nodeSelector:
+        kubernetes.io/os: linux       
+      volumes:      
+        - name: {{ .Release.Namespace }}-pipeline-data
+          {{- if .Values.archivematica_storage_service.persistence.enabled }}
+          persistentVolumeClaim:
+            claimName: {{ .Release.Namespace }}-pipeline-data       
+          {{- else }}
+          emptyDir: {}
+          {{- end }}
+        - name: {{ .Release.Namespace }}-transfer-share
+          {{- if .Values.archivematica_storage_service.persistence.enabled }}
+          persistentVolumeClaim:
+            claimName: transfer-share
+          {{- else }}
+          emptyDir: {}
+          {{- end }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  namespace: {{ .Release.Namespace }}
+  name: archivematica-clamavd
+  labels:
+    app.kubernetes.io/name: archivematica-clamavd
+    app.kubernetes.io/instance: {{ .Release.Namespace }}
+    app.kubernetes.io/version: test    
+    app.kubernetes.io/managed-by: helm
+spec:
+  type: ClusterIP
+  ports:
+    - port: 3310
+      targetPort: 3310
+  selector:
+    app.kubernetes.io/name: archivematica-all
+    app.kubernetes.io/instance: {{ .Release.Namespace }}
+    app.kubernetes.io/version: test    
+    app.kubernetes.io/managed-by: helm
+---
+apiVersion: v1
+kind: Service
+metadata:
+  namespace: {{ .Release.Namespace }}
+  name: archivematica-fits
+  labels:
+    app.kubernetes.io/name: archivematica-fits
+    app.kubernetes.io/instance: {{ .Release.Namespace }}
+    app.kubernetes.io/version: test    
+    app.kubernetes.io/managed-by: helm 
+spec:
+  type: ClusterIP
+  ports:
+  - port: 2113
+    targetPort: 2113
+  selector:
+    app.kubernetes.io/name: archivematica-all
+    app.kubernetes.io/instance: {{ .Release.Namespace }}
+    app.kubernetes.io/version: test    
+    app.kubernetes.io/managed-by: helm 
+---
+apiVersion: v1
+kind: Service
+metadata:
+  namespace: {{ .Release.Namespace }}
+  name: archivematica-dashboard
+  labels:
+    app.kubernetes.io/name: archivematica-dashboard
+    app.kubernetes.io/instance: {{ .Release.Namespace }}
+    app.kubernetes.io/version: test    
+    app.kubernetes.io/managed-by: helm
+spec:  
+  type: ClusterIP
+  ports:
+  - port: 8001
+    targetPort: 8001
+  selector:
+    app.kubernetes.io/name: archivematica-all
+    app.kubernetes.io/instance: {{ .Release.Namespace }}
+    app.kubernetes.io/version: test    
+    app.kubernetes.io/managed-by: helm
+---
+apiVersion: v1
+kind: Service
+metadata:
+  namespace: {{ .Release.Namespace }} 
+  name: 'archivematica-mcp-client'
+  labels:
+    app.kubernetes.io/name: archivematica-mcp-client
+    app.kubernetes.io/instance: {{ .Release.Namespace }}
+    app.kubernetes.io/version: test    
+    app.kubernetes.io/managed-by: helm
+spec:  
+  type: ClusterIP
+  ports:
+  - port: 8000
+    name: http-port
+    protocol: TCP
+    targetPort: 8000 
+  selector:
+    app.kubernetes.io/name: archivematica-mcp-client
+    app.kubernetes.io/instance: {{ .Release.Namespace }}
+    app.kubernetes.io/version: test    
+    app.kubernetes.io/managed-by: helm
+---
+apiVersion: v1
+kind: Service
+metadata:
+  namespace: {{ .Release.Namespace }}
+  name: archivematica-storage-service
+  labels:
+    app.kubernetes.io/name: archivematica-storage-service
+    app.kubernetes.io/instance: {{ .Release.Namespace }}
+    app.kubernetes.io/version: test    
+    app.kubernetes.io/managed-by: helm
+spec:  
+  type: ClusterIP
+  ports:
+  - port: 8002
+    targetPort: 8002
+  selector:
+    app.kubernetes.io/name: archivematica-all
+    app.kubernetes.io/instance: {{ .Release.Namespace }}
+    app.kubernetes.io/version: test    
+    app.kubernetes.io/managed-by: helm
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  namespace: {{ .Release.Namespace }}
+  name: archivematica-dashboard-ingress 
+  annotations:
+    kubernetes.io/ingress.class: nginx    
+    nginx.org/server-snippets: "gzip on;"
+    cert-manager.io/cluster-issuer: letsencrypt-prod    
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"    
+    nginx.ingress.kubernetes.io/whitelist-source-range: 10.0.0.0/24,172.10.0.1
+spec:  
+  tls:
+  - hosts:
+    - {{ .Values.route.hostname }}
+    secretName: archivematica-dashboard
+  rules:
+  - host: {{ .Values.route.hostname }}
+    http:
+      paths:           
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: archivematica-dashboard
+            port:
+              number: 8001
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  namespace: {{ .Release.Namespace }}
+  name: archivematica-storage-service-ingress 
+  annotations:
+    kubernetes.io/ingress.class: nginx    
+    nginx.org/server-snippets: "gzip on;"
+    cert-manager.io/cluster-issuer: letsencrypt-prod    
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"    
+    nginx.ingress.kubernetes.io/whitelist-source-range: 10.0.0.0/24,172.10.0.1 #This needs to be checked
+spec:  
+  tls:
+  - hosts:
+    - "localhost"
+    secretName: archivematica-storage-service
+  rules:
+  - host: "localhost"
+    http:
+      paths:           
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: archivematica-storage-service
+            port:
+              number: 8002
+---
+{{- if .Values.archivematica_storage_service.persistence.enabled }}
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: {{ .Release.Namespace }}-pipeline-data
+  annotations:
+    "helm.sh/resource-policy": keep
+spec:
+  accessModes:
+    - ReadWriteOnce
+    - ReadWriteMany
+    - ReadOnlyMany
+  resources:
+    requests:
+      storage: {{ .Values.archivematica_storage_service.persistence.size }}
+  storageClassName: cephfs-ssd
+{{- end }}
+---
+{{- if .Values.archivematica_storage_service.persistence.enabled }}
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: {{ .Release.Namespace }}-staging-data
+  annotations:
+    "helm.sh/resource-policy": keep
+spec:
+  accessModes:
+    - ReadWriteOnce
+    - ReadWriteMany
+    - ReadOnlyMany
+  resources:
+    requests:
+      storage: {{ .Values.archivematica_storage_service.persistence.size }}
+  storageClassName: cephfs-ssd
+{{- end }}
+---
+{{- if .Values.archivematica_storage_service.persistence.enabled }}
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: {{ .Release.Namespace }}-location-data
+  annotations:
+    "helm.sh/resource-policy": keep
+spec:
+  accessModes:
+    - ReadWriteOnce
+    - ReadWriteMany
+    - ReadOnlyMany
+  resources:
+    requests:
+      storage: {{ .Values.archivematica_storage_service.persistence.size }}
+  storageClassName: cephfs-ssd
+{{- end }}
+---
+{{- if .Values.archivematica_storage_service.persistence.enabled }}
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: transfer-share
+  annotations:
+    "helm.sh/resource-policy": keep
+spec:
+  accessModes:
+    - ReadWriteOnce
+    - ReadWriteMany
+    - ReadOnlyMany
+  resources:
+    requests:
+      storage: {{ .Values.archivematica_storage_service.persistence.size }}
+  storageClassName: cephfs-ssd
+{{- end }}
+---
+{{- if .Values.archivematica_storage_service.persistence.enabled }}
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: storage-share
+  annotations:
+    "helm.sh/resource-policy": keep
+spec:
+  accessModes:
+    - ReadWriteOnce
+    - ReadWriteMany
+    - ReadOnlyMany
+  resources:
+    requests:
+      storage: {{ .Values.archivematica_storage_service.persistence.size }}
+  storageClassName: cephfs-ssd
+{{- end }}
+---
+{{- if .Values.archivematica_storage_service.persistence.enabled }}
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: clamav-data
+  annotations:
+    "helm.sh/resource-policy": keep
+spec:
+  accessModes:
+    - ReadWriteOnce
+    - ReadWriteMany
+    - ReadOnlyMany
+  resources:
+    requests:
+      storage: 20Gi
+  storageClassName: cephfs-ssd
+{{- end }}
+---
+{{- if .Values.archivematica_storage_service.persistence.enabled }}
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: clamav-log
+  annotations:
+    "helm.sh/resource-policy": keep
+spec:
+  accessModes:
+    - ReadWriteOnce
+    - ReadWriteMany
+    - ReadOnlyMany
+  resources:
+    requests:
+      storage: {{ .Values.archivematica_storage_service.persistence.size }}
+  storageClassName: cephfs-ssd
+{{- end }}
+---
+{{- if .Values.archivematica_storage_service.persistence.enabled }}
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: eos-volume
+  annotations:
+    "helm.sh/resource-policy": keep
+    volume.beta.kubernetes.io/storage-provisioner: eos-volume-provisioner.webservices.cern.ch
+spec:
+  accessModes:
+    - ReadWriteOnce
+    - ReadWriteMany
+    - ReadOnlyMany
+  resources:
+    requests:
+      storage: {{ .Values.archivematica_storage_service.persistence.size }}
+  storageClassName: eos
+  volumeMode: Filesystem
+{{- end }}

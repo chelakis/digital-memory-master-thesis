@@ -1,0 +1,50 @@
+# This file provides the values used to deploy the "preserve-qa-am" instance of Archivematica, 
+#  to be used with the preserve-qa deployment of the Digital Memory platform
+
+general:
+  # Pick this based on your project's allowed range
+  # (check the openshift.io/sa.scc.uid-range annotation)
+  user_uid: "1011800000"
+
+archivematica_storage_service:
+  image: gitlab-registry.cern.ch/digitalmemory/archivematica-helm/archivematica-storage-service:dev
+  persistence:
+    enabled: true
+    size: 2Gi
+
+archivematica_dashboard:
+  image: gitlab-registry.cern.ch/digitalmemory/archivematica-helm/archivematica-dashboard:dev
+
+mcp_client:
+  image: gitlab-registry.cern.ch/digitalmemory/archivematica-helm/archivematica-mcp-client:dev
+
+mcp_server:
+  image: gitlab-registry.cern.ch/digitalmemory/archivematica-helm/archivematica-mcp-server:dev
+
+mysql:
+  db: archivematica_db
+  ss_db_url: "mysql://root@mysql:3306"
+  persistence:
+    enabled: true
+    size: 20Gi
+
+clamvd:
+  image: gitlab-registry.cern.ch/digitalmemory/archivematica-helm/am-clamav:dev
+  persistence:
+    enabled: true
+
+route:
+  hostname: "preserve-qa-am.web.cern.ch"
+  ss_hostname: "preserve-qa-am-ss.web.cern.ch"
+  enabled: true
+  tls: true
+
+redis:
+  persistence:
+    enabled: true
+    size: 2Gi
+
+gearmand:
+  queue_type: redis
+  redis_server: archivematica-redis
+  redis_port: 6379
