@@ -1,0 +1,1733 @@
+openapi: 3.0.3
+info:
+  title: OAIS Platform API
+  version: '0.1'
+  description: CERN Digital Memory platform API documentation
+paths:
+  /api/archives/:
+    get:
+      operationId: archives_list
+      description: API endpoint that allows Archives to be viewed or edited
+      parameters:
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      tags:
+      - archives
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedArchiveList'
+          description: ''
+  /api/archives/{id}/:
+    get:
+      operationId: archives_retrieve
+      description: API endpoint that allows Archives to be viewed or edited
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this archive.
+        required: true
+      tags:
+      - archives
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Archive'
+          description: ''
+  /api/archives/{id}/delete/:
+    get:
+      operationId: archives_delete_retrieve
+      description: Deletes the passed Archive
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this archive.
+        required: true
+      tags:
+      - archives
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Archive'
+          description: ''
+  /api/archives/{id}/details/:
+    get:
+      operationId: archives_details_retrieve
+      description: Returns details of an identified Archive
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this archive.
+        required: true
+      tags:
+      - archives
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Archive'
+          description: ''
+  /api/archives/{id}/next-step/:
+    post:
+      operationId: archives_next_step_create
+      description: Creates the next Step of the passed Archive
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this archive.
+        required: true
+      tags:
+      - archives
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Archive'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Archive'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Archive'
+        required: true
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Archive'
+          description: ''
+  /api/archives/{id}/save-manifest/:
+    post:
+      operationId: archives_save_manifest_create
+      description: Update the manifest for the specified Archive with the given content
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this archive.
+        required: true
+      tags:
+      - archives
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Archive'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Archive'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Archive'
+        required: true
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Archive'
+          description: ''
+  /api/archives/{id}/search/:
+    get:
+      operationId: archives_search_retrieve
+      description: Returns similar Archives (same Source and Recid) if any, nothing
+        otherwise
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this archive.
+        required: true
+      tags:
+      - archives
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Archive'
+          description: ''
+  /api/archives/{id}/steps/:
+    get:
+      operationId: archives_steps_retrieve
+      description: Returns all Steps of an identified Archive
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this archive.
+        required: true
+      tags:
+      - archives
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Archive'
+          description: ''
+  /api/archives/{id}/tags/:
+    get:
+      operationId: archives_tags_retrieve
+      description: Returns the Tag(s) the Archive has
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this archive.
+        required: true
+      tags:
+      - archives
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Archive'
+          description: ''
+  /api/archives/{id}/unstage/:
+    post:
+      operationId: archives_unstage_create
+      description: Unstages the passed Archive
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this archive.
+        required: true
+      tags:
+      - archives
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Archive'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Archive'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Archive'
+        required: true
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Archive'
+          description: ''
+  /api/archives/create/{recid}/{source}/:
+    post:
+      operationId: archives_create_create
+      description: Creates an Archive given a Source and a Record ID
+      parameters:
+      - in: path
+        name: recid
+        schema:
+          type: string
+        required: true
+      - in: path
+        name: source
+        schema:
+          type: string
+        required: true
+      tags:
+      - archives
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Archive'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Archive'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Archive'
+        required: true
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Archive'
+          description: ''
+  /api/archives/create/harvest/:
+    post:
+      operationId: archives_create_harvest_create
+      description: Creates an Archive triggering its own harvesting, given the Source
+        and Record ID
+      tags:
+      - archives
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SourceRecord'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/SourceRecord'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/SourceRecord'
+        required: true
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Archive'
+          description: ''
+  /api/archives/details/:
+    post:
+      operationId: archives_details_create
+      description: Returns details of passed Archives such as Steps, Tags and duplicates
+      tags:
+      - archives
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Archive'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Archive'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Archive'
+        required: true
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Archive'
+          description: ''
+  /api/archives/unstage/:
+    post:
+      operationId: mlt-unstage
+      description: Unstages the passed Archives, setting them to the Harvest stage,
+        waiting to be approved.Archives are also grouped under the same job tag
+      tags:
+      - archives
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Archive'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Archive'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Archive'
+        required: true
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Archive'
+          description: ''
+  /api/get-archive-information-labels/:
+    get:
+      operationId: get_archive_information_labels_retrieve
+      description: Get archive
+      tags:
+      - get-archive-information-labels
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/groups/:
+    get:
+      operationId: groups_list
+      description: API endpoint that allows Groups to be viewed or edited
+      parameters:
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      tags:
+      - groups
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedGroupList'
+          description: ''
+  /api/groups/{id}/:
+    get:
+      operationId: groups_retrieve
+      description: API endpoint that allows Groups to be viewed or edited
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this group.
+        required: true
+      tags:
+      - groups
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Group'
+          description: ''
+  /api/harvest/{id}/:
+    post:
+      operationId: harvest_create
+      description: Creates an Archive given the Source and Recid and assigns a havert
+        Step to it
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - harvest
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/login/:
+    post:
+      operationId: login_create
+      tags:
+      - login
+      security:
+      - cookieAuth: []
+      - {}
+      responses:
+        '200':
+          description: No response body
+  /api/logout/:
+    post:
+      operationId: logout_create
+      tags:
+      - logout
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/records/check:
+    post:
+      operationId: records_check_create
+      description: |-
+        Gets a list of records and searches the database for similar archives (same recid + source)
+        Then returns the list of records with an archive list field which containes the similar archives
+      tags:
+      - records
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/schema/:
+    get:
+      operationId: schema_retrieve
+      description: |-
+        OpenApi3 schema for this API. Format can be selected via content negotiation.
+
+        - YAML: application/vnd.oai.openapi
+        - JSON: application/vnd.oai.openapi+json
+      parameters:
+      - in: query
+        name: format
+        schema:
+          type: string
+          enum:
+          - json
+          - yaml
+      - in: query
+        name: lang
+        schema:
+          type: string
+          enum:
+          - af
+          - ar
+          - ar-dz
+          - ast
+          - az
+          - be
+          - bg
+          - bn
+          - br
+          - bs
+          - ca
+          - cs
+          - cy
+          - da
+          - de
+          - dsb
+          - el
+          - en
+          - en-au
+          - en-gb
+          - eo
+          - es
+          - es-ar
+          - es-co
+          - es-mx
+          - es-ni
+          - es-ve
+          - et
+          - eu
+          - fa
+          - fi
+          - fr
+          - fy
+          - ga
+          - gd
+          - gl
+          - he
+          - hi
+          - hr
+          - hsb
+          - hu
+          - hy
+          - ia
+          - id
+          - ig
+          - io
+          - is
+          - it
+          - ja
+          - ka
+          - kab
+          - kk
+          - km
+          - kn
+          - ko
+          - ky
+          - lb
+          - lt
+          - lv
+          - mk
+          - ml
+          - mn
+          - mr
+          - my
+          - nb
+          - ne
+          - nl
+          - nn
+          - os
+          - pa
+          - pl
+          - pt
+          - pt-br
+          - ro
+          - ru
+          - sk
+          - sl
+          - sq
+          - sr
+          - sr-latn
+          - sv
+          - sw
+          - ta
+          - te
+          - tg
+          - th
+          - tk
+          - tr
+          - tt
+          - udm
+          - uk
+          - ur
+          - uz
+          - vi
+          - zh-hans
+          - zh-hant
+      tags:
+      - schema
+      security:
+      - cookieAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/vnd.oai.openapi:
+              schema:
+                type: object
+                additionalProperties: {}
+            application/yaml:
+              schema:
+                type: object
+                additionalProperties: {}
+            application/vnd.oai.openapi+json:
+              schema:
+                type: object
+                additionalProperties: {}
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+          description: ''
+  /api/search-query/:
+    post:
+      operationId: search_query_create
+      description: |-
+        Gets the API request from the ReactSearchkit component and returns
+        the results based on the elasticsearch response
+      tags:
+      - search-query
+      security:
+      - cookieAuth: []
+      - {}
+      responses:
+        '200':
+          description: No response body
+  /api/search/{source}/:
+    get:
+      operationId: search_retrieve
+      parameters:
+      - in: path
+        name: source
+        schema:
+          type: string
+        required: true
+      tags:
+      - search
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/search/{source}/{recid}/:
+    get:
+      operationId: search_retrieve_2
+      parameters:
+      - in: path
+        name: recid
+        schema:
+          type: string
+        required: true
+      - in: path
+        name: source
+        schema:
+          type: string
+        required: true
+      tags:
+      - search
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/search/parse-url/:
+    post:
+      operationId: search_parse_url_create
+      tags:
+      - search
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/settings/:
+    get:
+      operationId: settings_retrieve
+      description: |-
+        Returns a collection of (read-only) the main configuration values and some
+        information about the backend
+      tags:
+      - settings
+      security:
+      - cookieAuth: []
+      - {}
+      responses:
+        '200':
+          description: No response body
+  /api/steps/:
+    get:
+      operationId: steps_list
+      description: API endpoint that allows Steps to be viewed, approved and rejected
+      parameters:
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      tags:
+      - steps
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedStepList'
+          description: ''
+  /api/steps/{id}/:
+    get:
+      operationId: steps_retrieve
+      description: API endpoint that allows Steps to be viewed, approved and rejected
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this step.
+        required: true
+      tags:
+      - steps
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Step'
+          description: ''
+  /api/steps/{id}/approve/:
+    post:
+      operationId: steps_approve_create
+      description: Approve an identified step
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this step.
+        required: true
+      tags:
+      - steps
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Step'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Step'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Step'
+        required: true
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Step'
+          description: ''
+  /api/steps/{id}/download-artifact/:
+    get:
+      operationId: steps_download_artifact_retrieve
+      description: API endpoint that allows Steps to be viewed, approved and rejected
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this step.
+        required: true
+      tags:
+      - steps
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Step'
+          description: ''
+  /api/steps/{id}/reject/:
+    post:
+      operationId: steps_reject_create
+      description: Reject an identified step
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this step.
+        required: true
+      tags:
+      - steps
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Step'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Step'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Step'
+        required: true
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Step'
+          description: ''
+  /api/tags/:
+    get:
+      operationId: tags_list
+      description: API endpoint that allows Tags to be viewed or edited
+      parameters:
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      tags:
+      - tags
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedCollectionList'
+          description: ''
+  /api/tags/{id}/:
+    get:
+      operationId: tags_retrieve
+      description: API endpoint that allows Tags to be viewed or edited
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this collection.
+        required: true
+      tags:
+      - tags
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Collection'
+          description: ''
+  /api/tags/{id}/add/:
+    post:
+      operationId: tags_add_create
+      description: Adds identified Tag to the passed Archives
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this collection.
+        required: true
+      tags:
+      - tags
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Collection'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Collection'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Collection'
+        required: true
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Collection'
+          description: ''
+  /api/tags/{id}/archives/:
+    get:
+      operationId: tags_archives_retrieve
+      description: Returns all Archives with a specific Tag
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this collection.
+        required: true
+      tags:
+      - tags
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Collection'
+          description: ''
+  /api/tags/{id}/delete/:
+    post:
+      operationId: tags_delete_create
+      description: Delete a Tag
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this collection.
+        required: true
+      tags:
+      - tags
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Collection'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Collection'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Collection'
+        required: true
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Collection'
+          description: ''
+  /api/tags/{id}/edit/:
+    post:
+      operationId: tags_edit_create
+      description: Update a Tag with title, description
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this collection.
+        required: true
+      tags:
+      - tags
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Collection'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Collection'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Collection'
+        required: true
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Collection'
+          description: ''
+  /api/tags/{id}/remove/:
+    post:
+      operationId: tags_remove_create
+      description: Removes identified Tag from the passed Archives
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this collection.
+        required: true
+      tags:
+      - tags
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Collection'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Collection'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Collection'
+        required: true
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Collection'
+          description: ''
+  /api/tags/create/:
+    post:
+      operationId: tags_create_create
+      description: Create a Tag with title, description and Archives
+      tags:
+      - tags
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Collection'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Collection'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Collection'
+        required: true
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Collection'
+          description: ''
+  /api/upload/jobs/:
+    get:
+      operationId: upload_jobs_retrieve
+      description: API endpoint that allows to create UploadJobs, add files, and submit
+      tags:
+      - upload
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/upload/jobs/{id}/:
+    get:
+      operationId: upload_jobs_retrieve_2
+      description: API endpoint that allows to create UploadJobs, add files, and submit
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this upload job.
+        required: true
+      tags:
+      - upload
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/upload/jobs/{id}/add/file/:
+    post:
+      operationId: upload_jobs_add_file_create
+      description: |-
+        Adds the given file to the specified UploadJob.
+
+        Reconstructs the original relative path in the UploadJob's corresponding temporary directory.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this upload job.
+        required: true
+      tags:
+      - upload
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/upload/jobs/{id}/archive/:
+    post:
+      operationId: upload_jobs_archive_create
+      description: |-
+        Creates an Archive given the path to an SIP.
+
+        Returns id of this Archive if succesful.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this upload job.
+        required: true
+      tags:
+      - upload
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/upload/jobs/{id}/sip/:
+    post:
+      operationId: upload_jobs_sip_create
+      description: |-
+        Creates an SIP calling bagit_create on the specified UploadJob.
+
+        Saves the SIP on the env. var BIC_UPLOAD_PATH (current working directory if not declared).
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this upload job.
+        required: true
+      tags:
+      - upload
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/upload/jobs/create/:
+    post:
+      operationId: upload_jobs_create_create
+      description: Initializes an UploadJob, returns its id and its corresponding
+        temporary directory.
+      tags:
+      - upload
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/upload/sip:
+    post:
+      operationId: upload_sip_create
+      description: |-
+        Creates an Archive given an UploadedFile
+                representing a zipped SIP
+      tags:
+      - upload
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/users/:
+    get:
+      operationId: users_list
+      description: API endpoint that allows Users to be viewed or edited
+      parameters:
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      tags:
+      - users
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedUserList'
+          description: ''
+  /api/users/{id}/:
+    get:
+      operationId: users_retrieve
+      description: API endpoint that allows Users to be viewed or edited
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this user.
+        required: true
+      tags:
+      - users
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+          description: ''
+  /api/users/{id}/archives/:
+    get:
+      operationId: users_archives_retrieve
+      description: Returns all Archives of a User
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this user.
+        required: true
+      tags:
+      - users
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+          description: ''
+  /api/users/me/:
+    get:
+      operationId: users_me_retrieve
+      description: |-
+        Returns information and settings about the User or,
+        updates its profile using the passed values to overwrite
+      tags:
+      - users
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+          description: ''
+    post:
+      operationId: users_me_create
+      description: |-
+        Returns information and settings about the User or,
+        updates its profile using the passed values to overwrite
+      tags:
+      - users
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/User'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/User'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/User'
+        required: true
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+          description: ''
+  /api/users/me/sources/:
+    get:
+      operationId: users_me_sources_retrieve
+      description: |-
+        Exposes the configuration status of the various upstream sources supported by
+        the platform.
+      tags:
+      - users
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+          description: ''
+  /api/users/me/staging-area/:
+    get:
+      operationId: users_me_staging_area_retrieve
+      description: Returns all Archives in the staging area of the User
+      tags:
+      - users
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Archive'
+          description: ''
+    post:
+      operationId: users_me_staging_area_create
+      description: Adds passed Archives to the staging area of the User
+      tags:
+      - users
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Archive'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Archive'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Archive'
+        required: true
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Archive'
+          description: ''
+  /api/users/me/stats/:
+    get:
+      operationId: users_me_stats_retrieve
+      description: Returns all Steps and status of the User
+      tags:
+      - users
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+          description: ''
+  /api/users/me/tags/:
+    get:
+      operationId: users_me_tags_retrieve
+      description: Returns all Tags created by the User
+      tags:
+      - users
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+          description: ''
+components:
+  schemas:
+    Archive:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        source_url:
+          type: string
+          maxLength: 100
+        recid:
+          type: string
+          maxLength: 50
+        source:
+          type: string
+          maxLength: 50
+        creator:
+          $ref: '#/components/schemas/User'
+        timestamp:
+          type: string
+          format: date-time
+        last_step:
+          type: integer
+          nullable: true
+        path_to_sip:
+          type: string
+          maxLength: 100
+        next_steps:
+          type: object
+          additionalProperties: {}
+        manifest:
+          type: object
+          additionalProperties: {}
+          nullable: true
+        staged:
+          type: boolean
+        title:
+          type: string
+          maxLength: 255
+        restricted:
+          type: boolean
+        invenio_version:
+          type: integer
+          maximum: 2147483647
+          minimum: -2147483648
+        resource:
+          $ref: '#/components/schemas/Resource'
+      required:
+      - creator
+      - id
+      - path_to_sip
+      - recid
+      - resource
+      - source
+      - source_url
+    Collection:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        title:
+          type: string
+          nullable: true
+          maxLength: 50
+        description:
+          type: string
+          nullable: true
+          maxLength: 1024
+        creator:
+          $ref: '#/components/schemas/User'
+        timestamp:
+          type: string
+          format: date-time
+        last_modification_date:
+          type: string
+          format: date-time
+        archives:
+          type: array
+          items:
+            $ref: '#/components/schemas/Archive'
+      required:
+      - archives
+      - creator
+      - id
+    Group:
+      type: object
+      properties:
+        url:
+          type: string
+          format: uri
+          readOnly: true
+        name:
+          type: string
+          maxLength: 150
+      required:
+      - name
+      - url
+    NameEnum:
+      enum:
+      - 1
+      - 2
+      - 3
+      - 4
+      - 5
+      - 6
+      - 7
+      type: integer
+    PaginatedArchiveList:
+      type: object
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/Archive'
+    PaginatedCollectionList:
+      type: object
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/Collection'
+    PaginatedGroupList:
+      type: object
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/Group'
+    PaginatedStepList:
+      type: object
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/Step'
+    PaginatedUserList:
+      type: object
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/User'
+    Profile:
+      type: object
+      properties:
+        indico_api_key:
+          type: string
+          maxLength: 500
+        codimd_api_key:
+          type: string
+          maxLength: 500
+        sso_comp_token:
+          type: string
+          maxLength: 500
+    Resource:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        source:
+          type: string
+          maxLength: 50
+        recid:
+          type: string
+          maxLength: 50
+        invenio_id:
+          type: string
+          maxLength: 50
+        invenio_parent_id:
+          type: string
+          nullable: true
+          maxLength: 150
+        invenio_parent_url:
+          type: string
+          nullable: true
+          maxLength: 150
+      required:
+      - id
+      - invenio_id
+      - recid
+      - source
+    SourceRecord:
+      type: object
+      properties:
+        source:
+          type: string
+          maxLength: 150
+        recid:
+          type: string
+          maxLength: 128
+      required:
+      - recid
+      - source
+    StatusEnum:
+      enum:
+      - 1
+      - 2
+      - 3
+      - 4
+      - 5
+      - 6
+      - 7
+      type: integer
+    Step:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        archive:
+          type: integer
+        name:
+          allOf:
+          - $ref: '#/components/schemas/NameEnum'
+          minimum: -2147483648
+          maximum: 2147483647
+        start_date:
+          type: string
+          format: date-time
+        finish_date:
+          type: string
+          format: date-time
+          nullable: true
+        status:
+          allOf:
+          - $ref: '#/components/schemas/StatusEnum'
+          minimum: -2147483648
+          maximum: 2147483647
+        celery_task_id:
+          type: string
+          nullable: true
+          maxLength: 50
+        input_data:
+          type: string
+          nullable: true
+        input_step:
+          type: integer
+          nullable: true
+        output_data:
+          type: string
+          nullable: true
+      required:
+      - archive
+      - id
+      - name
+    User:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        username:
+          type: string
+          description: Required. 150 characters or fewer. Letters, digits and @/./+/-/_
+            only.
+          pattern: ^[\w.@+-]+$
+          maxLength: 150
+        permissions:
+          type: string
+          readOnly: true
+        first_name:
+          type: string
+          maxLength: 150
+        last_name:
+          type: string
+          maxLength: 150
+        profile:
+          $ref: '#/components/schemas/Profile'
+      required:
+      - id
+      - permissions
+      - profile
+      - username
+  securitySchemes:
+    cookieAuth:
+      type: apiKey
+      in: cookie
+      name: sessionid
